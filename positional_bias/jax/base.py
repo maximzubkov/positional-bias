@@ -1,6 +1,5 @@
 import jax
 import jax.numpy as jnp
-from flax import nn
 from jax.random import normal, uniform
 
 

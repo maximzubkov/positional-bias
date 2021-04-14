@@ -1,4 +1,3 @@
-import jax
 import flax.nn as nn
 
 from .fft import FFTBias, FFTBias2d

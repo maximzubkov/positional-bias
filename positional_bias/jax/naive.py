@@ -1,6 +1,6 @@
-import jax
-import jax.numpy as jnp
 import flax.nn as nn
+import jax.numpy as jnp
+
 from .base import init_bias, compute_w_shape
 
 

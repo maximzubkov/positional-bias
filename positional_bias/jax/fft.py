@@ -1,7 +1,7 @@
-import jax
+import flax.nn as nn
 import jax.numpy as jnp
 from jax.nn import initializers
-import flax.nn as nn
+
 from .base import init_bias, compute_w_shape
 
 
@@ -49,7 +49,7 @@ class FFTBias(nn.Module):
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
         v_ = v[:, 1:-1, :, :] if has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
-        n = 2 * seq_len - 1
+        # n = 2 * seq_len - 1
 
         w_shape = compute_w_shape(shape_=shape_, bias_base_type=bias_base_type)
         w = self.param(
@@ -106,7 +106,7 @@ class FFTBias2d(nn.Module):
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
         v_ = v[:, 1:-1, :, :] if has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
-        n = 2 * shape_ - 1
+        # n = 2 * shape_ - 1
 
         w_shape = compute_w_shape(shape_=shape_, bias_base_type=bias_base_type)
         w = self.param(
