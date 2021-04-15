@@ -4,4 +4,5 @@ mypy==0.812
 torch==1.8.1
 einops==0.3.0
 jax>=0.2.4
+jaxlib>=0.1.64
 flax>=0.2.2
