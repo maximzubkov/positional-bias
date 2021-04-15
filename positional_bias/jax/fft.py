@@ -7,9 +7,7 @@ from .base import init_bias, compute_w_shape
 
 def _process(x: jnp.array, has_specials: bool):
     if has_specials:
-        padding = ([0, 0], [0, 0], [1, 1])
-        if len(x.shape) == 4:
-            padding = ([0, 0], ) + padding
+        padding = ([0, 0], ) * (len(x.shape) - 1) + ([1, 1], )
         x = jnp.pad(x, pad_width=padding, mode='constant', constant_values=0)
     return x
 
