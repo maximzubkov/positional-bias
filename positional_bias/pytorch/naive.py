@@ -73,7 +73,7 @@ class NaiveBias(NaiveBiasBase):
             lm=lm,
             has_specials=has_specials
         )
-        self.shape_ = self.full_seq_len
+        self.shape_ = self.max_seq_len
         self._init_bias()
 
     def forward(self, v):

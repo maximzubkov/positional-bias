@@ -9,7 +9,7 @@ batch_size = 16
 embed_dim = 64
 
 config = dict(
-    max_seq_len=max_seq_len,
+    max_seq_len=seq_len,
     num_attention_heads=num_heads,
     pos_bias_type="naive",
     bias_base_type="full",
