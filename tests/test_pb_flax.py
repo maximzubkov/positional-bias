@@ -4,8 +4,7 @@ import jax
 import jax.numpy as jnp
 from flax import nn
 
-from positional_bias.jax import FFTBias2d, FFTBias, NaiveBias2d, NaiveBias
-
+from positional_bias.jax import create_model, name2model
 
 seq_len = 28 * 28 + 2
 num_heads = 3
@@ -13,7 +12,7 @@ batch_size = 4
 embed_dim = 12
 
 config1 = dict(
-    full_seq_len=seq_len,
+    max_seq_len=seq_len,
     n_heads=num_heads,
     pos_bias_type="",
     bias_base_type="",
@@ -22,7 +21,7 @@ config1 = dict(
 )
 
 config2 = dict(
-    full_seq_len=seq_len,
+    max_seq_len=seq_len,
     n_heads=num_heads,
     pos_bias_type="",
     bias_base_type="",
@@ -30,34 +29,16 @@ config2 = dict(
     has_specials=True,
 )
 
-name2model = {
-    "naive": NaiveBias,
-    "naive_2d": NaiveBias2d,
-    "fft": FFTBias,
-    "fft_2d": FFTBias2d
-}
-
-
-def create_model(key, flax_module, input_shape, model_kwargs):
-    """Creates and initializes the model."""
-
-    @functools.partial(jax.jit, backend='cpu')
-    def _create_model(key):
-        module = flax_module.partial(**model_kwargs)
-        with nn.stochastic(key):
-            _, initial_params = module.init_by_shape(key, [(input_shape, jnp.float32)])
-            model = nn.Model(module, initial_params)
-        return model
-
-    return _create_model(key)
-
 
 def _test_flax(naive_config: dict, fft_config: dict):
     key = jax.random.PRNGKey(9)
     v = jax.random.uniform(key, shape=[batch_size, seq_len, num_heads, embed_dim])
 
-    fft_pb = create_model(key, name2model[fft_config["pos_bias_type"]], v.shape, fft_config)
-    orig_pb = create_model(key, name2model[naive_config["pos_bias_type"]], v.shape, naive_config)
+    fft_model = name2model[fft_config["pos_bias_type"]]
+    naive_model = name2model[naive_config["pos_bias_type"]]
+
+    fft_pb = create_model(fft_model, v.shape, fft_config, key)
+    orig_pb = create_model(naive_model, v.shape, naive_config, key)
 
     ppb_fft, z_pb_fft = fft_pb(v, **fft_config)
     ppb_orig, z_pb_orig = orig_pb(v, **naive_config)
