@@ -11,7 +11,7 @@ class FFTBiasBase(BiasBase):
             bias_base_type: str,
             pos_bias_type: str,
             num_attention_heads: int,
-            seq_len: int,
+            max_seq_len: int,
             lm: bool,
             has_specials: bool
     ) -> None:
@@ -19,7 +19,7 @@ class FFTBiasBase(BiasBase):
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
-            seq_len=seq_len,
+            max_seq_len=max_seq_len,
             lm=lm,
             has_specials=has_specials
         )
@@ -59,7 +59,7 @@ class FFTBias(FFTBiasBase):
             bias_base_type: str,
             pos_bias_type: str,
             num_attention_heads: int,
-            seq_len: int,
+            max_seq_len: int,
             lm: bool,
             has_specials: bool
     ) -> None:
@@ -67,12 +67,12 @@ class FFTBias(FFTBiasBase):
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
-            seq_len=seq_len,
+            max_seq_len=max_seq_len,
             lm=lm,
             has_specials=has_specials
         )
 
-        self.shape_ = int(self.full_seq_len)
+        self.shape_ = int(self.max_seq_len)
         self._init_bias()
 
         self.o_ = torch.nn.Parameter(torch.ones(self.shape_), requires_grad=False)
@@ -112,7 +112,7 @@ class FFTBias2d(FFTBiasBase):
             bias_base_type: str,
             pos_bias_type: str,
             num_attention_heads: int,
-            seq_len: int,
+            max_seq_len: int,
             lm: bool,
             has_specials: bool
     ) -> None:
@@ -120,11 +120,11 @@ class FFTBias2d(FFTBiasBase):
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
-            seq_len=seq_len,
+            max_seq_len=max_seq_len,
             lm=lm,
             has_specials=has_specials
         )
-        self.shape_ = int(self.full_seq_len ** 0.5)
+        self.shape_ = int(self.max_seq_len ** 0.5)
         self._init_bias()
 
         self.o_ = torch.ones(self.shape_)

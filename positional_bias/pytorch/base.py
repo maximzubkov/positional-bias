@@ -8,7 +8,7 @@ class BiasBase(nn.Module):
             bias_base_type: str,
             pos_bias_type: str,
             num_attention_heads: int,
-            seq_len: int,
+            max_seq_len: int,
             lm: bool,
             has_specials: bool
     ) -> None:
@@ -18,14 +18,14 @@ class BiasBase(nn.Module):
         self.lm = lm
         self.has_specials = has_specials
         self.n_heads = num_attention_heads
-        self.full_seq_len = seq_len
+        self.max_seq_len = max_seq_len
         self.shape_ = 0
 
         if self.has_specials:
-            self.full_seq_len = self.full_seq_len - 2
+            self.max_seq_len = self.max_seq_len - 2
 
         if self.lm:
-            ones = torch.ones(self.full_seq_len, self.full_seq_len)
+            ones = torch.ones(self.max_seq_len, self.max_seq_len)
             self.mask = nn.Parameter(
                 torch.tril(ones).unsqueeze(0),
                 requires_grad=False
