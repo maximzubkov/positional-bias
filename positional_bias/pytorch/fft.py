@@ -12,21 +12,28 @@ class FFTBiasBase(BiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool,
-            has_specials: bool
     ) -> None:
         super(FFTBiasBase, self).__init__(
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token,
             lm=lm,
-            has_specials=has_specials
         )
 
     def _process(self, x: torch.Tensor):
-        if self.has_specials:
-            x = F.pad(input=x, pad=[1, 1], mode='constant', value=0)
+        if self.has_first_special_token or self.has_last_special_token:
+            pad = [0, 0]
+            if self.has_first_special_token:
+                pad[0] += 1
+            if self.has_last_special_token:
+                pad[1] += 1
+            x = F.pad(input=x, pad=pad, mode='constant', value=0)
         return x
 
     def _compute_z_fft(self, seq_len: int):
@@ -60,16 +67,18 @@ class FFTBias(FFTBiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool,
-            has_specials: bool
     ) -> None:
         super(FFTBias, self).__init__(
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token,
             lm=lm,
-            has_specials=has_specials
         )
 
         self.shape_ = int(self.max_seq_len)
@@ -79,7 +88,11 @@ class FFTBias(FFTBiasBase):
 
     def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
-        v_ = v[:, 1:-1, :, :] if self.has_specials else v
+        v_ = v
+        if self.has_first_special_token:
+            v_ = v_[:, 1:, :, :]
+        if self.has_last_special_token:
+            v_ = v_[:, :-1, :, :]
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         n = 2 * seq_len - 1
         z_fft = self._compute_z_fft(seq_len)
@@ -113,16 +126,18 @@ class FFTBias2d(FFTBiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool,
-            has_specials: bool
     ) -> None:
         super(FFTBias2d, self).__init__(
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token,
             lm=lm,
-            has_specials=has_specials
         )
         self.shape_ = int(self.max_seq_len ** 0.5)
         self._init_bias()
@@ -131,8 +146,13 @@ class FFTBias2d(FFTBiasBase):
         self.o_ = torch.nn.Parameter(nn.functional.pad(self.o_, [self.shape_ - 1, 0]), requires_grad=False)
 
     def forward(self, v):
-        # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
-        v_ = v[:, 1:-1, :, :] if self.has_specials else v
+        # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
+        v_ = v
+        if self.has_first_special_token:
+            v_ = v_[:, 1:, :, :]
+        if self.has_last_special_token:
+            v_ = v_[:, :-1, :, :]
+
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         n = 2 * self.shape_ - 1
         z_fft = self._compute_z_fft(self.shape_)

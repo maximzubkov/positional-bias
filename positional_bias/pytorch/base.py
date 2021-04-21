@@ -9,20 +9,24 @@ class BiasBase(nn.Module):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool,
-            has_specials: bool
     ) -> None:
         super(BiasBase, self).__init__()
         self.bias_base_type = bias_base_type
         self.pos_bias_type = pos_bias_type
         self.lm = lm
-        self.has_specials = has_specials
+        self.has_first_special_token = has_first_special_token
+        self.has_last_special_token = has_last_special_token
         self.n_heads = num_attention_heads
         self.max_seq_len = max_seq_len
         self.shape_ = 0
 
-        if self.has_specials:
-            self.max_seq_len = self.max_seq_len - 2
+        if self.has_first_special_token:
+            self.max_seq_len = self.max_seq_len - 1
+        if self.has_last_special_token:
+            self.max_seq_len = self.max_seq_len - 1
 
         if self.lm:
             ones = torch.ones(self.max_seq_len, self.max_seq_len)

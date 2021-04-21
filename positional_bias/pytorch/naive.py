@@ -12,21 +12,30 @@ class NaiveBiasBase(BiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool,
-            has_specials: bool
     ) -> None:
         super(NaiveBiasBase, self).__init__(
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token,
             lm=lm,
-            has_specials=has_specials
         )
 
     def _process(self, w_: torch.Tensor, batch_size: int):
-        if self.has_specials:
-            w_ = F.pad(input=w_, pad=[1, 1, 1, 1], mode='constant', value=0)
+        if self.has_first_special_token or self.has_last_special_token:
+            pad = [0, 0, 0, 0]
+            if self.has_first_special_token:
+                pad[0] += 1
+                pad[2] += 1
+            if self.has_last_special_token:
+                pad[1] += 1
+                pad[3] += 1
+            w_ = F.pad(input=w_, pad=pad, mode='constant', value=0)
         if self.lm:
             w_ = w_ * self.mask
         if (len(w_.shape) == 4) and (w_.shape[0] == 1):
@@ -62,16 +71,18 @@ class NaiveBias(NaiveBiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool,
-            has_specials: bool
     ) -> None:
         super(NaiveBias, self).__init__(
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token,
             lm=lm,
-            has_specials=has_specials
         )
         self.shape_ = self.max_seq_len
         self._init_bias()
@@ -79,8 +90,10 @@ class NaiveBias(NaiveBiasBase):
     def forward(self, v):
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
-        if self.has_specials:
-            seq_len -= 2
+        if self.has_first_special_token:
+            seq_len -= 1
+        if self.has_last_special_token:
+            seq_len -= 1
 
         if self.bias_base_type == "full":
             w_ = self.w[..., self.shape_ - seq_len: self.shape_ + seq_len - 1]
@@ -104,16 +117,18 @@ class NaiveBias2d(NaiveBiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool,
-            has_specials: bool
     ) -> None:
         super(NaiveBias2d, self).__init__(
             bias_base_type=bias_base_type,
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token,
             lm=lm,
-            has_specials=has_specials
         )
         self.shape_ = int(self.max_seq_len ** 0.5)
         self._init_bias()

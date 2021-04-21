@@ -5,9 +5,18 @@ from jax.nn import initializers
 from .base import init_bias, compute_w_shape
 
 
-def _process(x: jnp.array, has_specials: bool):
-    if has_specials:
-        padding = ([0, 0], ) * (len(x.shape) - 1) + ([1, 1], )
+def _process(
+        x: jnp.array,
+        has_first_special_token: bool,
+        has_last_special_token: bool,
+):
+    if has_first_special_token or has_last_special_token:
+        last = ([0, 0],)
+        if has_first_special_token:
+            last[0][0] += 1
+        if has_last_special_token:
+            last[0][1] += 1
+        padding = ([0, 0], ) * (len(x.shape) - 1) + last
         x = jnp.pad(x, pad_width=padding, mode='constant', constant_values=0)
     return x
 
@@ -38,13 +47,21 @@ class FFTBias(nn.Module):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_specials: bool,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool = False,
     ):
-        shape_ = int(max_seq_len - 2 if has_specials else max_seq_len)
+        shape_ = int(max_seq_len)
 
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
-        v_ = v[:, 1:-1, :, :] if has_specials else v
+        v_ = v
+        if has_first_special_token:
+            shape_ -= 1
+            v_ = v_[:, 1:, :, :]
+        if has_last_special_token:
+            shape_ -= 1
+            v_ = v_[:, :-1, :, :]
+
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         # n = 2 * seq_len - 1
 
@@ -70,7 +87,11 @@ class FFTBias(nn.Module):
 
         pbv = jnp.fft.irfft(v_fft * jnp.expand_dims(z_fft, axis=1))
         pbv = pbv[..., :seq_len]
-        pbv = _process(pbv, has_specials=has_specials)
+        pbv = _process(
+            pbv,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token
+        )
         pbv = jnp.transpose(pbv, axes=[0, 3, 2, 1])
 
         o_ = self.param("o_", (shape_, ), initializers.ones)
@@ -79,7 +100,11 @@ class FFTBias(nn.Module):
 
         z_pb = jnp.fft.irfft(z_fft * o_fft)
         z_pb = z_pb[..., :seq_len]
-        z_pb = _process(z_pb, has_specials=has_specials)
+        z_pb = _process(
+            z_pb,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token
+        )
         z_pb = jnp.transpose(z_pb, axes=[0, 2, 1])
         return pbv, z_pb
 
@@ -93,15 +118,21 @@ class FFTBias2d(nn.Module):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_specials: bool,
+            has_first_special_token: bool,
+            has_last_special_token: bool,
             lm: bool = False,
     ):
-        if has_specials:
-            max_seq_len = max_seq_len - 2
+        # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
+        v_ = v
+        if has_first_special_token:
+            max_seq_len -= 1
+            v_ = v_[:, 1:, :, :]
+        if has_last_special_token:
+            max_seq_len -= 1
+            v_ = v_[:, :-1, :, :]
 
         shape_ = int(max_seq_len ** 0.5)
-        # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
-        v_ = v[:, 1:-1, :, :] if has_specials else v
+
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         # n = 2 * shape_ - 1
 
@@ -137,7 +168,11 @@ class FFTBias2d(nn.Module):
 
         pbv = jnp.expand_dims(RxV_m, axis=-2) + jnp.expand_dims(RxU_m, axis=-1)
         pbv = jnp.reshape(pbv, newshape=[batch_size, emb_dim, n_heads, seq_len])
-        pbv = _process(pbv, has_specials=has_specials)
+        pbv = _process(
+            pbv,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token
+        )
         pbv = jnp.transpose(pbv, axes=[0, 3, 2, 1])
 
         o_ = self.param("o_", (shape_,), initializers.ones)
@@ -148,7 +183,11 @@ class FFTBias2d(nn.Module):
 
         z_pb = jnp.expand_dims(z_pb, axis=-2) + jnp.expand_dims(z_pb, axis=-1)
         z_pb = jnp.reshape(z_pb, newshape=[-1, n_heads, shape_ * shape_])
-        z_pb = _process(z_pb, has_specials=has_specials)
+        z_pb = _process(
+            z_pb,
+            has_first_special_token=has_first_special_token,
+            has_last_special_token=has_last_special_token
+        )
         z_pb = jnp.transpose(z_pb, axes=[0, 2, 1])
 
         return pbv, z_pb
