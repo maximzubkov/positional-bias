@@ -9,7 +9,7 @@ batch_size = 16
 embed_dim = 64
 
 config = dict(
-    seq_len=seq_len,
+    max_seq_len=seq_len,
     num_attention_heads=num_heads,
     pos_bias_type="naive",
     bias_base_type="full",
@@ -23,7 +23,7 @@ v = torch.rand(batch_size, seq_len, num_heads, embed_dim)
 @torch.no_grad()
 def test_lm_naive_2d():
     cumsum = 2 * torch.cumsum(v, dim=-3)
-    config["pos_bias_type"]  = "naive_2d"
+    config["pos_bias_type"] = "naive_2d"
     pos_bias = PositionalBias(**config)
     pos_bias.eval()
     pos_bias.bias.w.data = repeat(torch.ones(2 * int(seq_len ** 0.5) - 1), 's -> h s', h=num_heads).unsqueeze(0)

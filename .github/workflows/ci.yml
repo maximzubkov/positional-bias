@@ -26,6 +26,3 @@ jobs:
     - name: pytest
       run: |
         pytest .
-    - name: Check types with mypy
-      run: |
-        mypy . --ignore-missing-imports
