@@ -21,7 +21,7 @@ name2model = {
 }
 
 
-def create_model(flax_module: nn.Module, input_shape: tuple, model_kwargs: dict, key):
+def create_model(flax_module: nn.Module, input_shape: tuple, model_kwargs: dict, key: jax.random.PRNGKey):
     """Creates and initializes the model."""
 
     @functools.partial(jax.jit, backend='cpu')

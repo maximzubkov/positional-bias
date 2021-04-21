@@ -1,8 +1,5 @@
-import functools
-
 import jax
 import jax.numpy as jnp
-from flax import nn
 
 from positional_bias.jax import create_model, name2model
 

@@ -1,10 +1,6 @@
-import functools
-
 import jax
-import jax.numpy as jnp
-import torch
-from flax import nn
 import numpy as np
+import torch
 
 from positional_bias.jax import create_model, name2model
 from positional_bias.pytorch import PositionalBias
