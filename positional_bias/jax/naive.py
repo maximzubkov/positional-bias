@@ -42,11 +42,11 @@ class NaiveBias(nn.Module):
             bias_base_type: str,
             pos_bias_type: str,
             n_heads: int,
-            full_seq_len: int,
+            max_seq_len: int,
             has_specials: bool,
             lm: bool = False,
     ):
-        shape_ = int(full_seq_len - 2 if has_specials else full_seq_len)
+        shape_ = int(max_seq_len - 2 if has_specials else max_seq_len)
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
         if has_specials:
@@ -85,13 +85,13 @@ class NaiveBias2d(nn.Module):
             bias_base_type: str,
             pos_bias_type: str,
             n_heads: int,
-            full_seq_len: int,
+            max_seq_len: int,
             has_specials: bool,
             lm: bool = False,
     ):
         if has_specials:
-            full_seq_len = full_seq_len - 2
-        shape_ = int(full_seq_len ** 0.5)
+            max_seq_len = max_seq_len - 2
+        shape_ = int(max_seq_len ** 0.5)
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
 

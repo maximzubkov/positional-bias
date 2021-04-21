@@ -31,18 +31,17 @@ def _compute_z_fft(w: jnp.array, shape_: int, bias_base_type: str, seq_len: int)
 
 
 class FFTBias(nn.Module):
-
     def apply(
             self,
             v: jnp.array,
             bias_base_type: str,
             pos_bias_type: str,
             n_heads: int,
-            full_seq_len: int,
+            max_seq_len: int,
             has_specials: bool,
             lm: bool = False,
     ):
-        shape_ = int(full_seq_len - 2 if has_specials else full_seq_len)
+        shape_ = int(max_seq_len - 2 if has_specials else max_seq_len)
 
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
         v_ = v[:, 1:-1, :, :] if has_specials else v
@@ -93,14 +92,14 @@ class FFTBias2d(nn.Module):
             bias_base_type: str,
             pos_bias_type: str,
             n_heads: int,
-            full_seq_len: int,
+            max_seq_len: int,
             has_specials: bool,
             lm: bool = False,
     ):
         if has_specials:
-            full_seq_len = full_seq_len - 2
+            max_seq_len = max_seq_len - 2
 
-        shape_ = int(full_seq_len ** 0.5)
+        shape_ = int(max_seq_len ** 0.5)
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
         v_ = v[:, 1:-1, :, :] if has_specials else v
         batch_size, seq_len, n_heads, emb_dim = v_.shape
