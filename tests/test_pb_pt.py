@@ -1,9 +1,6 @@
 import torch
-import jax
-import jax.numpy as jnp
 
 from positional_bias.pytorch import PositionalBias as pt_pb
-from positional_bias.jax import PositionalBias as jax_pb
 
 torch.manual_seed(9)
 
@@ -13,7 +10,7 @@ batch_size = 16
 embed_dim = 64
 
 config1 = dict(
-    seq_len=seq_len,
+    max_seq_len=seq_len,
     num_attention_heads=num_heads,
     pos_bias_type="",
     bias_base_type="",
@@ -22,7 +19,7 @@ config1 = dict(
 )
 
 config2 = dict(
-    seq_len=seq_len,
+    max_seq_len=seq_len,
     num_attention_heads=num_heads,
     pos_bias_type="",
     bias_base_type="",
