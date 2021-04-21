@@ -13,7 +13,7 @@ embed_dim = 12
 
 config1 = dict(
     max_seq_len=seq_len,
-    n_heads=num_heads,
+    num_attention_heads=num_heads,
     pos_bias_type="",
     bias_base_type="",
     lm=False,
@@ -22,7 +22,7 @@ config1 = dict(
 
 config2 = dict(
     max_seq_len=seq_len,
-    n_heads=num_heads,
+    num_attention_heads=num_heads,
     pos_bias_type="",
     bias_base_type="",
     lm=False,
