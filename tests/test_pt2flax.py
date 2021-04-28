@@ -16,8 +16,8 @@ config = dict(
     pos_bias_type="",
     bias_base_type="",
     lm=False,
-    has_first_special_token=True,
-    has_last_special_token=True,
+    has_bos=True,
+    has_eos=True,
 )
 
 

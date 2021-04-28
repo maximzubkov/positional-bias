@@ -14,8 +14,8 @@ config = dict(
     pos_bias_type="naive",
     bias_base_type="full",
     lm=True,
-    has_first_special_token=False,
-    has_last_special_token=False,
+    has_bos=False,
+    has_eos=False,
 )
 
 v = torch.rand(batch_size, seq_len, num_heads, embed_dim)
