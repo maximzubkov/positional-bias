@@ -9,23 +9,23 @@ class BiasBase(nn.Module):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_first_special_token: bool,
-            has_last_special_token: bool,
+            has_bos: bool,
+            has_eos: bool,
             lm: bool,
     ) -> None:
         super(BiasBase, self).__init__()
         self.bias_base_type = bias_base_type
         self.pos_bias_type = pos_bias_type
         self.lm = lm
-        self.has_first_special_token = has_first_special_token
-        self.has_last_special_token = has_last_special_token
+        self.has_bos = has_bos
+        self.has_eos = has_eos
         self.n_heads = num_attention_heads
         self.max_seq_len = max_seq_len
         self.shape_ = 0
 
-        if self.has_first_special_token:
+        if self.has_bos:
             self.max_seq_len = self.max_seq_len - 1
-        if self.has_last_special_token:
+        if self.has_eos:
             self.max_seq_len = self.max_seq_len - 1
 
         if self.lm:

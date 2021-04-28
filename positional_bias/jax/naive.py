@@ -7,14 +7,14 @@ from .base import init_bias, compute_w_shape
 def _process(
         w_: jnp.array,
         batch_size: int,
-        has_first_special_token: bool,
-        has_last_special_token: bool,
+        has_bos: bool,
+        has_eos: bool,
 ):
-    if has_first_special_token or has_last_special_token:
+    if has_bos or has_eos:
         last = [0, 0]
-        if has_first_special_token:
+        if has_bos:
             last[0] += 1
-        if has_last_special_token:
+        if has_eos:
             last[1] += 1
         last = tuple(last)
         w_ = jnp.pad(w_, pad_width=[(0, 0), (0, 0), last, last], mode='constant', constant_values=0)
@@ -54,8 +54,8 @@ class NaiveBias(nn.Module):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_first_special_token: bool,
-            has_last_special_token: bool,
+            has_bos: bool,
+            has_eos: bool,
             lm: bool = False,
     ):
         shape_ = int(max_seq_len)
@@ -63,10 +63,10 @@ class NaiveBias(nn.Module):
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
 
-        if has_first_special_token:
+        if has_bos:
             shape_ -= 1
             seq_len -= 1
-        if has_last_special_token:
+        if has_eos:
             shape_ -= 1
             seq_len -= 1
 
@@ -89,12 +89,7 @@ class NaiveBias(nn.Module):
             raise ValueError("Unknown bias base type")
 
         bias = _construct_bias(w_, seq_len=seq_len, bias_base_type=bias_base_type)
-        bias = _process(
-            bias,
-            batch_size=batch_size,
-            has_first_special_token=has_first_special_token,
-            has_last_special_token=has_last_special_token
-        )
+        bias = _process(bias, batch_size=batch_size, has_bos=has_bos, has_eos=has_eos)
         z_pb = jnp.transpose(bias.sum(-1), axes=[0, 2, 1])
         pbv = jnp.einsum("nlhd,nhlj->njhd", v, jnp.transpose(bias, axes=[0, 1, 3, 2]))
         return pbv, z_pb
@@ -109,13 +104,13 @@ class NaiveBias2d(nn.Module):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_first_special_token: bool,
-            has_last_special_token: bool,
+            has_bos: bool,
+            has_eos: bool,
             lm: bool = False,
     ):
-        if has_first_special_token:
+        if has_bos:
             max_seq_len -= 1
-        if has_last_special_token:
+        if has_eos:
             max_seq_len -= 1
 
         shape_ = int(max_seq_len ** 0.5)
@@ -142,12 +137,7 @@ class NaiveBias2d(nn.Module):
         w_batch_shape, *_ = w_.shape
         w_ = jnp.reshape(w_, newshape=[w_batch_shape, n_heads, shape_, shape_, -1])
         w_ = jnp.reshape(w_, newshape=[w_batch_shape, n_heads, -1, shape_ ** 2])
-        w_ = _process(
-            w_,
-            batch_size=batch_size,
-            has_first_special_token=has_first_special_token,
-            has_last_special_token=has_last_special_token
-        )
+        w_ = _process(w_, batch_size=batch_size, has_bos=has_bos, has_eos=has_eos)
         z_pb = jnp.transpose(w_.sum(-1), axes=[0, 2, 1])
         pbv = jnp.einsum("nlhd,nhlj->njhd", v, jnp.transpose(w_, axes=[0, 1, 3, 2]))
         return pbv, z_pb
