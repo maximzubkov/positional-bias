@@ -12,8 +12,8 @@ class FFTBiasBase(BiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_first_special_token: bool,
-            has_last_special_token: bool,
+            has_bos: bool,
+            has_eos: bool,
             lm: bool,
     ) -> None:
         super(FFTBiasBase, self).__init__(
@@ -21,17 +21,17 @@ class FFTBiasBase(BiasBase):
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
-            has_first_special_token=has_first_special_token,
-            has_last_special_token=has_last_special_token,
+            has_bos=has_bos,
+            has_eos=has_eos,
             lm=lm,
         )
 
     def _process(self, x: torch.Tensor):
-        if self.has_first_special_token or self.has_last_special_token:
+        if self.has_bos or self.has_eos:
             pad = [0, 0]
-            if self.has_first_special_token:
+            if self.has_bos:
                 pad[0] += 1
-            if self.has_last_special_token:
+            if self.has_eos:
                 pad[1] += 1
             x = F.pad(input=x, pad=pad, mode='constant', value=0)
         return x
@@ -67,8 +67,8 @@ class FFTBias(FFTBiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_first_special_token: bool,
-            has_last_special_token: bool,
+            has_bos: bool,
+            has_eos: bool,
             lm: bool,
     ) -> None:
         super(FFTBias, self).__init__(
@@ -76,8 +76,8 @@ class FFTBias(FFTBiasBase):
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
-            has_first_special_token=has_first_special_token,
-            has_last_special_token=has_last_special_token,
+            has_bos=has_bos,
+            has_eos=has_eos,
             lm=lm,
         )
 
@@ -89,9 +89,9 @@ class FFTBias(FFTBiasBase):
     def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
         v_ = v
-        if self.has_first_special_token:
+        if self.has_bos:
             v_ = v_[:, 1:, :, :]
-        if self.has_last_special_token:
+        if self.has_eos:
             v_ = v_[:, :-1, :, :]
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         n = 2 * seq_len - 1
@@ -126,8 +126,8 @@ class FFTBias2d(FFTBiasBase):
             pos_bias_type: str,
             num_attention_heads: int,
             max_seq_len: int,
-            has_first_special_token: bool,
-            has_last_special_token: bool,
+            has_bos: bool,
+            has_eos: bool,
             lm: bool,
     ) -> None:
         super(FFTBias2d, self).__init__(
@@ -135,8 +135,8 @@ class FFTBias2d(FFTBiasBase):
             pos_bias_type=pos_bias_type,
             num_attention_heads=num_attention_heads,
             max_seq_len=max_seq_len,
-            has_first_special_token=has_first_special_token,
-            has_last_special_token=has_last_special_token,
+            has_bos=has_bos,
+            has_eos=has_eos,
             lm=lm,
         )
         self.shape_ = int(self.max_seq_len ** 0.5)
@@ -148,9 +148,9 @@ class FFTBias2d(FFTBiasBase):
     def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
         v_ = v
-        if self.has_first_special_token:
+        if self.has_bos:
             v_ = v_[:, 1:, :, :]
-        if self.has_last_special_token:
+        if self.has_eos:
             v_ = v_[:, :-1, :, :]
 
         batch_size, seq_len, n_heads, emb_dim = v_.shape
