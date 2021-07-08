@@ -43,8 +43,8 @@ def _test_pt2flax(config_: dict):
     ppb_pytorch_np = ppb_pytorch.detach().cpu().numpy()
     z_pb_pytorch_np = z_pb_pytorch.detach().cpu().numpy()
 
-    assert np.allclose(ppb_flax_np, ppb_pytorch_np, atol=0.3e-1), "Z not equal"
-    assert np.allclose(z_pb_flax_np, z_pb_pytorch_np, atol=0.3e-1), "PPB not equal"
+    assert np.allclose(ppb_flax_np, ppb_pytorch_np, atol=1e-5), "Z not equal"
+    assert np.allclose(z_pb_flax_np, z_pb_pytorch_np, atol=1e-5), "PPB not equal"
 
 
 def test_pt2flax_naive_full():
