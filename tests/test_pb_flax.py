@@ -42,8 +42,8 @@ def _test_flax(naive_config: dict, fft_config: dict):
     ppb_fft, z_pb_fft = fft_pb(v, **fft_config)
     ppb_orig, z_pb_orig = orig_pb(v, **naive_config)
 
-    assert jnp.allclose(z_pb_orig, z_pb_fft, atol=0.3e-1), "Z not equal"
-    assert jnp.allclose(ppb_orig, ppb_fft, atol=0.3e-1), "PPB not equal"
+    assert jnp.allclose(z_pb_orig, z_pb_fft, atol=1e-3), "Z not equal"
+    assert jnp.allclose(ppb_orig, ppb_fft, atol=1e-3), "PPB not equal"
 
 
 def test_pos_bias_full_flax():
