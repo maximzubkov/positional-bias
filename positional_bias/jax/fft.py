@@ -63,7 +63,7 @@ class FFTBias(nn.Module):
             v_ = v_[:, :-1, :, :]
 
         batch_size, seq_len, n_heads, emb_dim = v_.shape
-        # n = 2 * seq_len - 1
+        n = 2 * seq_len - 1
 
         w_shape = compute_w_shape(shape_=shape_, bias_base_type=bias_base_type)
         w = self.param(
@@ -85,7 +85,7 @@ class FFTBias(nn.Module):
         v_ = jnp.pad(v_, pad_width=([0, 0], [0, 0], [0, 0], [shape_ - 1, 0]), mode='constant', constant_values=0)
         v_fft = jnp.fft.rfft(v_)
 
-        pbv = jnp.fft.irfft(v_fft * jnp.expand_dims(z_fft, axis=1))
+        pbv = jnp.fft.irfft(v_fft * jnp.expand_dims(z_fft, axis=1), n=n)
         pbv = pbv[..., :seq_len]
         pbv = _process(pbv, has_bos=has_bos, has_eos=has_eos)
         pbv = jnp.transpose(pbv, axes=[0, 3, 2, 1])
@@ -94,7 +94,7 @@ class FFTBias(nn.Module):
         o_ = jnp.pad(o_[:seq_len], pad_width=[pad_size, 0])
         o_fft = jnp.fft.rfft(o_)
 
-        z_pb = jnp.fft.irfft(z_fft * o_fft)
+        z_pb = jnp.fft.irfft(z_fft * o_fft, n=n)
         z_pb = z_pb[..., :seq_len]
         z_pb = _process(z_pb, has_bos=has_bos, has_eos=has_eos)
         z_pb = jnp.transpose(z_pb, axes=[0, 2, 1])
@@ -126,7 +126,7 @@ class FFTBias2d(nn.Module):
         shape_ = int(max_seq_len ** 0.5)
 
         batch_size, seq_len, n_heads, emb_dim = v_.shape
-        # n = 2 * shape_ - 1
+        n = 2 * shape_ - 1
 
         w_shape = compute_w_shape(shape_=shape_, bias_base_type=bias_base_type)
         w = self.param(
@@ -153,9 +153,9 @@ class FFTBias2d(nn.Module):
         u_m = jnp.pad(u_s, pad_width=([0, 0], [0, 0], [0, 0], [shape_ - 1, 0]), mode='constant', constant_values=0)
         u_m_fft = jnp.fft.rfft(u_m)
 
-        RxV_m = jnp.fft.irfft(v_m_fft * jnp.expand_dims(z_fft, axis=1))
+        RxV_m = jnp.fft.irfft(v_m_fft * jnp.expand_dims(z_fft, axis=1), n=n)
         RxV_m = RxV_m[..., :shape_]
-        RxU_m = jnp.fft.irfft(u_m_fft * jnp.expand_dims(z_fft, axis=1))
+        RxU_m = jnp.fft.irfft(u_m_fft * jnp.expand_dims(z_fft, axis=1), n=n)
         RxU_m = RxU_m[..., :shape_]
 
         pbv = jnp.expand_dims(RxV_m, axis=-2) + jnp.expand_dims(RxU_m, axis=-1)
@@ -166,7 +166,7 @@ class FFTBias2d(nn.Module):
         o_ = self.param("o_", (shape_,), initializers.ones)
         o_ = jnp.pad(o_, pad_width=([shape_ - 1, 0],), mode='constant', constant_values=0)
         o_fft = jnp.fft.rfft(o_)
-        z_pb = jnp.fft.irfft(o_fft * z_fft)
+        z_pb = jnp.fft.irfft(o_fft * z_fft, n=n)
         z_pb = z_pb[..., :shape_] * shape_
 
         z_pb = jnp.expand_dims(z_pb, axis=-2) + jnp.expand_dims(z_pb, axis=-1)
