@@ -43,9 +43,8 @@ def _test_pt(naive_config: dict, fft_config: dict):
     naive_pos_bias.bias.w.data = w_
     fft_pos_bias.bias.w.data = w_
 
-    ppb_fft, z_pb_fft = fft_pos_bias(v)
-    ppb_orig, z_pb_orig = naive_pos_bias(v)
-    assert torch.allclose(z_pb_orig, z_pb_fft, atol=1e-3), "Z not equal"
+    ppb_fft = fft_pos_bias(v)
+    ppb_orig = naive_pos_bias(v)
     assert torch.allclose(ppb_orig, ppb_fft, atol=1e-3), "PPB not equal"
 
 
