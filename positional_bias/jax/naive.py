@@ -90,9 +90,8 @@ class NaiveBias(nn.Module):
 
         bias = _construct_bias(w_, seq_len=seq_len, bias_base_type=bias_base_type)
         bias = _process(bias, batch_size=batch_size, has_bos=has_bos, has_eos=has_eos)
-        z_pb = jnp.transpose(bias.sum(-1), axes=[0, 2, 1])
         pbv = jnp.einsum("nlhd,nhlj->njhd", v, jnp.transpose(bias, axes=[0, 1, 3, 2]))
-        return pbv, z_pb
+        return pbv
 
 
 class NaiveBias2d(nn.Module):
@@ -139,6 +138,5 @@ class NaiveBias2d(nn.Module):
         w_ = jnp.reshape(w_, newshape=[w_batch_shape, n_heads, shape_, shape_, -1])
         w_ = jnp.reshape(w_, newshape=[w_batch_shape, n_heads, -1, shape_ ** 2])
         w_ = _process(w_, batch_size=batch_size, has_bos=has_bos, has_eos=has_eos)
-        z_pb = jnp.transpose(w_.sum(-1), axes=[0, 2, 1])
         pbv = jnp.einsum("nlhd,nhlj->njhd", v, jnp.transpose(w_, axes=[0, 1, 3, 2]))
-        return pbv, z_pb
+        return pbv

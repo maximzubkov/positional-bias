@@ -34,17 +34,13 @@ def _test_pt2flax(config_: dict):
     w_np = np.array(flax_pb.params["w"])
     pytorch_pb.bias.w.data = torch.Tensor(w_np)
 
-    ppb_flax, z_pb_flax = flax_pb(v_jax, **config_)
-    ppb_pytorch, z_pb_pytorch = pytorch_pb(v_pt)
+    ppb_flax = flax_pb(v_jax, **config_)
+    ppb_pytorch = pytorch_pb(v_pt)
 
     ppb_flax_np = np.array(ppb_flax)
-    z_pb_flax_np = np.array(z_pb_flax)
-
     ppb_pytorch_np = ppb_pytorch.detach().cpu().numpy()
-    z_pb_pytorch_np = z_pb_pytorch.detach().cpu().numpy()
 
-    assert np.allclose(ppb_flax_np, ppb_pytorch_np, atol=1e-5), "Z not equal"
-    assert np.allclose(z_pb_flax_np, z_pb_pytorch_np, atol=1e-5), "PPB not equal"
+    assert np.allclose(ppb_flax_np, ppb_pytorch_np, atol=1e-5), "PPB not equal"
 
 
 def test_pt2flax_naive_full():

@@ -39,10 +39,9 @@ def _test_flax(naive_config: dict, fft_config: dict):
     fft_pb = create_model(fft_model, v.shape, fft_config, key)
     orig_pb = create_model(naive_model, v.shape, naive_config, key)
 
-    ppb_fft, z_pb_fft = fft_pb(v, **fft_config)
-    ppb_orig, z_pb_orig = orig_pb(v, **naive_config)
+    ppb_fft = fft_pb(v, **fft_config)
+    ppb_orig = orig_pb(v, **naive_config)
 
-    assert jnp.allclose(z_pb_orig, z_pb_fft, atol=1e-3), "Z not equal"
     assert jnp.allclose(ppb_orig, ppb_fft, atol=1e-3), "PPB not equal"
 
 

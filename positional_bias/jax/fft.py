@@ -1,6 +1,5 @@
 import flax.nn as nn
 import jax.numpy as jnp
-from jax.nn import initializers
 
 from .base import init_bias, compute_w_shape
 
@@ -80,8 +79,6 @@ class FFTBias(nn.Module):
 
         v_ = jnp.transpose(v_, axes=[0, 3, 2, 1])
 
-        pad_size = seq_len - 1
-
         v_ = jnp.pad(v_, pad_width=([0, 0], [0, 0], [0, 0], [shape_ - 1, 0]), mode='constant', constant_values=0)
         v_fft = jnp.fft.rfft(v_)
 
@@ -90,15 +87,7 @@ class FFTBias(nn.Module):
         pbv = _process(pbv, has_bos=has_bos, has_eos=has_eos)
         pbv = jnp.transpose(pbv, axes=[0, 3, 2, 1])
 
-        o_ = self.param("o_", (shape_, ), initializers.ones)
-        o_ = jnp.pad(o_[:seq_len], pad_width=[pad_size, 0])
-        o_fft = jnp.fft.rfft(o_)
-
-        z_pb = jnp.fft.irfft(z_fft * o_fft, n=n)
-        z_pb = z_pb[..., :seq_len]
-        z_pb = _process(z_pb, has_bos=has_bos, has_eos=has_eos)
-        z_pb = jnp.transpose(z_pb, axes=[0, 2, 1])
-        return pbv, z_pb
+        return pbv
 
 
 class FFTBias2d(nn.Module):
@@ -164,15 +153,4 @@ class FFTBias2d(nn.Module):
         pbv = _process(pbv, has_bos=has_bos, has_eos=has_eos)
         pbv = jnp.transpose(pbv, axes=[0, 3, 2, 1])
 
-        o_ = self.param("o_", (shape_,), initializers.ones)
-        o_ = jnp.pad(o_, pad_width=([shape_ - 1, 0],), mode='constant', constant_values=0)
-        o_fft = jnp.fft.rfft(o_)
-        z_pb = jnp.fft.irfft(o_fft * z_fft, n=n)
-        z_pb = z_pb[..., :shape_] * shape_
-
-        z_pb = jnp.expand_dims(z_pb, axis=-2) + jnp.expand_dims(z_pb, axis=-1)
-        z_pb = jnp.reshape(z_pb, newshape=[-1, n_heads, shape_ * shape_])
-        z_pb = _process(z_pb, has_bos=has_bos, has_eos=has_eos)
-        z_pb = jnp.transpose(z_pb, axes=[0, 2, 1])
-
-        return pbv, z_pb
+        return pbv

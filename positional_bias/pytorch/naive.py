@@ -104,10 +104,9 @@ class NaiveBias(NaiveBiasBase):
 
         bias = self._construct_bias(w_, seq_len)
         bias = self._process(bias, batch_size)
-        z_pb = bias.sum(-1).transpose(-2, -1)
 
         pbv = torch.einsum("nlhd,nhlj->njhd", v, bias.transpose(-2, -1))
-        return pbv, z_pb
+        return pbv
 
 
 class NaiveBias2d(NaiveBiasBase):
@@ -146,6 +145,5 @@ class NaiveBias2d(NaiveBiasBase):
         w_ = w_.reshape(w_batch_shape, n_heads, self.shape_, self.shape_, -1)
         w_ = w_.reshape(w_batch_shape, n_heads, -1, self.shape_ ** 2)
         w_ = self._process(w_, batch_size)
-        z_pb = w_.sum(-1).transpose(-2, -1)
         pbv = torch.einsum("nlhd,nhlj->njhd", v, w_.transpose(-2, -1))
-        return pbv, z_pb
+        return pbv
