@@ -106,6 +106,7 @@ class NaiveBias2d(nn.Module):
             max_seq_len: int,
             has_bos: bool,
             has_eos: bool,
+            n_channels: int = 1,
             lm: bool = False,
     ):
         if has_bos:

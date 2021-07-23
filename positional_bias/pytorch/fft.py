@@ -128,7 +128,8 @@ class FFTBias2d(FFTBiasBase):
             max_seq_len: int,
             has_bos: bool,
             has_eos: bool,
-            lm: bool,
+            n_channels: int = 1,
+            lm: bool = False,
     ) -> None:
         super(FFTBias2d, self).__init__(
             bias_base_type=bias_base_type,
@@ -140,6 +141,7 @@ class FFTBias2d(FFTBiasBase):
             lm=lm,
         )
         self.shape_ = int(self.max_seq_len ** 0.5)
+        self.n_channels = n_channels
         self._init_bias()
 
         self.o_ = torch.ones(self.shape_)
@@ -147,6 +149,7 @@ class FFTBias2d(FFTBiasBase):
 
     def forward(self, v):
         # [batch_size, [bos] + [...] x seq_len + [eos], n_heads, emb_dim]
+        # where seq_len is H x W x C for images
         v_ = v
         if self.has_bos:
             v_ = v_[:, 1:, :, :]
@@ -157,7 +160,9 @@ class FFTBias2d(FFTBiasBase):
         n = 2 * self.shape_ - 1
         z_fft = self._compute_z_fft(self.shape_)
 
-        v_ = v_.transpose(-3, -1).reshape(batch_size, emb_dim, n_heads, self.shape_, self.shape_).transpose(-3, -2)
+        v_ = v_.transpose(-3, -1)
+        v_ = v_.reshape(batch_size, emb_dim, n_heads, self.shape_, self.shape_, self.n_channels)
+        v_ = v_.permute(0, 1, 5, 3, 2, 4)
 
         v_m = nn.functional.pad(v_.sum(-3), [self.shape_ - 1, 0])
         v_m_fft = torch.fft.rfft(v_m)
@@ -171,6 +176,8 @@ class FFTBias2d(FFTBiasBase):
         RxU_m = RxU_m[..., :self.shape_]
 
         pbv = RxV_m.unsqueeze(-2) + RxU_m.unsqueeze(-1)
+        pbv = pbv.reshape(batch_size, emb_dim, self.n_channels, n_heads, -1)
+        pbv = pbv.permute(0, 1, 3, 4, 2)
         pbv = pbv.reshape(batch_size, emb_dim, n_heads, seq_len)
         pbv = self._process(pbv)
         pbv = pbv.permute(0, 3, 2, 1)

@@ -112,6 +112,7 @@ class FFTBias2d(nn.Module):
             max_seq_len: int,
             has_bos: bool,
             has_eos: bool,
+            n_channels: int = 1,
             lm: bool = False,
     ):
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]

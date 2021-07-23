@@ -119,7 +119,8 @@ class NaiveBias2d(NaiveBiasBase):
             max_seq_len: int,
             has_bos: bool,
             has_eos: bool,
-            lm: bool,
+            n_channels: int = 1,
+            lm: bool = False,
     ) -> None:
         super(NaiveBias2d, self).__init__(
             bias_base_type=bias_base_type,
@@ -131,6 +132,7 @@ class NaiveBias2d(NaiveBiasBase):
             lm=lm,
         )
         self.shape_ = int(self.max_seq_len ** 0.5)
+        self.n_channels = n_channels
         self._init_bias()
 
     def forward(self, v):
