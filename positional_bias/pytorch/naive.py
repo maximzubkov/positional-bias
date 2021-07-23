@@ -130,7 +130,7 @@ class NaiveBias2d(NaiveBiasBase):
             has_eos=has_eos,
             lm=lm,
         )
-        self.shape_ = int(self.max_seq_len ** 0.5)
+        self.shape_ = int((self.max_seq_len / n_channels) ** 0.5)
         self.n_channels = n_channels
         self._init_bias()
 
@@ -144,6 +144,9 @@ class NaiveBias2d(NaiveBiasBase):
         w_batch_shape, *_ = w_.shape
         w_ = w_.reshape(w_batch_shape, n_heads, self.shape_, self.shape_, -1)
         w_ = w_.reshape(w_batch_shape, n_heads, -1, self.shape_ ** 2)
+        w_ = w_.unsqueeze(-1).unsqueeze(-3)
+        w_ = w_.repeat(1, 1, 1, self.n_channels, 1, self.n_channels)
+        w_ = w_.reshape(w_batch_shape, n_heads, self.max_seq_len, self.max_seq_len)
         w_ = self._process(w_, batch_size)
         pbv = torch.einsum("nlhd,nhlj->njhd", v, w_.transpose(-2, -1))
         return pbv
