@@ -105,6 +105,7 @@ class NaiveBias2d(nn.Module):
             max_seq_len: int,
             has_bos: bool,
             has_eos: bool,
+            n_channels: int = 1,
             lm: bool = False,
     ):
         if has_bos:
@@ -112,7 +113,7 @@ class NaiveBias2d(nn.Module):
         if has_eos:
             max_seq_len -= 1
 
-        shape_ = int(max_seq_len ** 0.5)
+        shape_ = int((max_seq_len / n_channels) ** 0.5)
         # [batch_size, seq_len, seq_len]
         batch_size, seq_len, n_heads, emb_dim = v.shape
 
@@ -136,6 +137,11 @@ class NaiveBias2d(nn.Module):
         w_batch_shape, *_ = w_.shape
         w_ = jnp.reshape(w_, newshape=[w_batch_shape, n_heads, shape_, shape_, -1])
         w_ = jnp.reshape(w_, newshape=[w_batch_shape, n_heads, -1, shape_ ** 2])
+        w_ = jnp.expand_dims(w_, axis=-1)
+        w_ = jnp.repeat(w_, repeats=n_channels, axis=-1)
+        w_ = jnp.expand_dims(w_, axis=-3)
+        w_ = jnp.repeat(w_, repeats=n_channels, axis=-3)
+        w_ = jnp.reshape(w_, newshape=[w_batch_shape, n_heads, n_channels * shape_ ** 2, n_channels * shape_ ** 2])
         w_ = _process(w_, batch_size=batch_size, has_bos=has_bos, has_eos=has_eos)
         pbv = jnp.einsum("nlhd,nhlj->njhd", v, jnp.transpose(w_, axes=[0, 1, 3, 2]))
         return pbv

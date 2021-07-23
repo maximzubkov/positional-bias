@@ -5,7 +5,7 @@ import torch
 from positional_bias.jax import create_model, name2model
 from positional_bias.pytorch import PositionalBias
 
-seq_len = 28 * 28 + 2
+seq_len = 28 * 28 * 4 + 2
 num_heads = 3
 batch_size = 4
 embed_dim = 12
@@ -73,10 +73,26 @@ def test_pt2flax_fft2d_full():
     _test_pt2flax(config)
 
 
+def test_pt2flax_fft2d_full_multichannel():
+    config["pos_bias_type"] = "fft_2d"
+    config["bias_base_type"] = "full"
+    config["n_channels"] = 4
+    _test_pt2flax(config)
+    del config["n_channels"]
+
+
 def test_pt2flax_fft2d_sym():
     config["pos_bias_type"] = "fft_2d"
     config["bias_base_type"] = "symmetric"
     _test_pt2flax(config)
+
+
+def test_pt2flax_fft2d_sym_multichannel():
+    config["pos_bias_type"] = "fft_2d"
+    config["bias_base_type"] = "full"
+    config["n_channels"] = 4
+    _test_pt2flax(config)
+    del config["n_channels"]
 
 
 def test_pt2flax_naive2d_full():
@@ -85,7 +101,23 @@ def test_pt2flax_naive2d_full():
     _test_pt2flax(config)
 
 
+def test_pt2flax_naive2d_full_multichannel():
+    config["pos_bias_type"] = "naive_2d"
+    config["bias_base_type"] = "full"
+    config["n_channels"] = 4
+    _test_pt2flax(config)
+    del config["n_channels"]
+
+
 def test_pt2flax_naive2d_sym():
     config["pos_bias_type"] = "naive_2d"
     config["bias_base_type"] = "symmetric"
     _test_pt2flax(config)
+
+
+def test_pt2flax_naive2d_sym_multichannel():
+    config["pos_bias_type"] = "naive_2d"
+    config["bias_base_type"] = "symmetric"
+    config["n_channels"] = 4
+    _test_pt2flax(config)
+    del config["n_channels"]

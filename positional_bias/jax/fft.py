@@ -101,6 +101,7 @@ class FFTBias2d(nn.Module):
             max_seq_len: int,
             has_bos: bool,
             has_eos: bool,
+            n_channels: int = 1,
             lm: bool = False,
     ):
         # [batch_size, [bos] + [...] x seq_len + [eos], seq_len]
@@ -112,7 +113,7 @@ class FFTBias2d(nn.Module):
             max_seq_len -= 1
             v_ = v_[:, :-1, :, :]
 
-        shape_ = int(max_seq_len ** 0.5)
+        shape_ = int((max_seq_len / n_channels) ** 0.5)
 
         batch_size, seq_len, n_heads, emb_dim = v_.shape
         n = 2 * shape_ - 1
@@ -131,15 +132,17 @@ class FFTBias2d(nn.Module):
         z_fft = _compute_z_fft(w, shape_=shape_, bias_base_type=bias_base_type, seq_len=shape_)
 
         v_ = jnp.transpose(v_, axes=[0, 3, 2, 1])
-        v_ = jnp.reshape(v_, newshape=[batch_size, emb_dim, n_heads, shape_, shape_])
-        v_ = jnp.transpose(v_, axes=[0, 1, 3, 2, 4])
+        v_ = jnp.reshape(v_, newshape=[batch_size, emb_dim, n_heads, shape_, shape_, n_channels])
+        v_ = jnp.transpose(v_, axes=[0, 1, 5, 3, 2, 4])
+
+        pad_width = ([0, 0], [0, 0], [0, 0], [0, 0], [shape_ - 1, 0])
 
         v_s = v_.sum(-3)
-        v_m = jnp.pad(v_s, pad_width=([0, 0], [0, 0], [0, 0], [shape_ - 1, 0]), mode='constant', constant_values=0)
+        v_m = jnp.pad(v_s, pad_width=pad_width, mode='constant', constant_values=0)
         v_m_fft = jnp.fft.rfft(v_m)
 
-        u_s = jnp.transpose(v_, axes=[0, 1, 4, 3, 2]).sum(-3)
-        u_m = jnp.pad(u_s, pad_width=([0, 0], [0, 0], [0, 0], [shape_ - 1, 0]), mode='constant', constant_values=0)
+        u_s = jnp.transpose(v_, axes=[0, 1, 2, 5, 4, 3]).sum(-3)
+        u_m = jnp.pad(u_s, pad_width=pad_width, mode='constant', constant_values=0)
         u_m_fft = jnp.fft.rfft(u_m)
 
         RxV_m = jnp.fft.irfft(v_m_fft * jnp.expand_dims(z_fft, axis=1), n=n)
@@ -148,6 +151,8 @@ class FFTBias2d(nn.Module):
         RxU_m = RxU_m[..., :shape_]
 
         pbv = jnp.expand_dims(RxV_m, axis=-2) + jnp.expand_dims(RxU_m, axis=-1)
+        pbv = jnp.reshape(pbv, newshape=[batch_size, emb_dim, n_channels, n_heads, shape_ * shape_])
+        pbv = jnp.transpose(pbv, axes=[0, 1, 3, 4, 2])
         pbv = jnp.reshape(pbv, newshape=[batch_size, emb_dim, n_heads, seq_len])
         pbv = _process(pbv, has_bos=has_bos, has_eos=has_eos)
         pbv = jnp.transpose(pbv, axes=[0, 3, 2, 1])

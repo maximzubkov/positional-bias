@@ -9,7 +9,7 @@ with open("requirements.txt") as requirements_file:
 
 setup_args = dict(
       name="positional-bias",
-      version='0.0.1',
+      version='0.0.2',
       description="Lib with postional bias module implemented in pytorch and jax",
       url="https://github.com/maximzubkov/positional-bias",
       author="Zubkov Maksim",
