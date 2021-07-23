@@ -131,7 +131,7 @@ class FFTBias2d(FFTBiasBase):
             has_eos=has_eos,
             lm=lm,
         )
-        self.shape_ = int(self.max_seq_len ** 0.5)
+        self.shape_ = int((max_seq_len / n_channels) ** 0.5)
         self.n_channels = n_channels
         self._init_bias()
 
